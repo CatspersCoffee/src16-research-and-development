@@ -1,0 +1,24 @@
+[package]
+name = "test-mail-me"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+custom-src16-encoder = { path = "../custom-src16-encoder/" }
+
+ethers = { version = "2.0", features = ["rustls"] }
+
+# For fuel-core version 0.40.0:
+fuel-types = "0.58.2"
+fuel-vm = "0.58.2"
+fuel-tx = { version = "0.58.2" }
+fuel-core = { version = "0.40.0", default-features = false }
+fuels = { version = "0.66.9", features = ["fuel-core-lib"] }
+fuel-crypto = "0.58.2"
+
+tokio = { version = "1.12", features = ["rt", "macros"] }
+dotenv = "0.15.0"
+rand = "0.8.5"
+reqwest = "0.11.13"
+serde_json = "1.0.91"
+hex = "0.4.3"

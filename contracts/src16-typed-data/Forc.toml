@@ -1,6 +1,6 @@
 [project]
 authors = ["Antony <antony@l3labs.org>"]
-entry = "typed_data_example.sw"
+entry = "src16_typed_data.sw"
 license = "Apache-2.0"
 name = "src16_typed_data"
 

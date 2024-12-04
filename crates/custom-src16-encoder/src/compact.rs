@@ -1,10 +1,4 @@
-use std::str::FromStr;
-use ethers::{
-    signers::LocalWallet,
-    types::{
-        U256, Signature,
-    },
-};
+use ethers::types::{U256, Signature};
 
 // credit: fuel-labs
 pub fn compact(signature: &Signature) -> [u8; 64] {
