@@ -1,5 +1,7 @@
 [workspace]
 members = [
     "crates/test-mail-me",
-    "bin", "crates/custom-src16-encoder",
+    "crates/custom-src16-encoder",
+    "crates/eip712-encoder",
+    "bin",
 ]

@@ -7,15 +7,15 @@ use fuels::prelude::*;
 //     accounts::wallet::WalletUnlocked,
 // };
 
-use crate::setup_env::setup_test_environment::*;
-use crate::interfaces::mail_me_interface::call_send_mail_get_hash;
+use crate::setup_env::setup_test_environment_fuelmailme;
+use crate::interfaces::*;
+use crate::helpers::*;
 
-
-// cargo test --package test-mail-me --lib -- test_mail_me::test_mailme_encode --exact --show-output
+// cargo test --package test-mail-me --lib -- test_mail_me::test_mailme_encode_w_src16domain --exact --show-output
 #[tokio::test]
-pub async fn test_mailme_encode() {
+pub async fn test_mailme_encode_w_src16domain() {
 
-    let (_provider, mailme_cid, wallet) = setup_assets_sdk_provider().await.unwrap();
+    let (_provider, mailme_cid, wallet) = setup_test_environment_fuelmailme::setup_assets_sdk_provider().await.unwrap();
 
     println!("MailMe contractid: {}", mailme_cid);
 
@@ -40,7 +40,7 @@ pub async fn test_mailme_encode() {
 
     let message = "A message from Alice to Bob.".to_string();
 
-    let encoded_hash_cc = call_send_mail_get_hash(
+    let encoded_hash_cc = mail_me_fuel_interface::call_send_mail_get_hash(
         mailme_cid,
         &wallet,
         from_alice_addr,
@@ -54,7 +54,7 @@ pub async fn test_mailme_encode() {
     println!("\nShould match below ⬇️");
     println!("\n-------------------------------------------------------------------------------------------");
 
-    let encoded_hash_independent = src16_independent_encoder::get_encoded_hash_using_custom_encoder(mailme_contractid_array);
+    let encoded_hash_independent = src16domain_independent_encoder::get_encoded_hash_using_custom_encoder(mailme_contractid_array);
 
     println!("------------------------------------------------------------------ (custom encoder result):\n");
     println!("Should match above ⬆️ \n");
@@ -66,14 +66,16 @@ pub async fn test_mailme_encode() {
 
 
 
-pub mod src16_independent_encoder {
+pub mod src16domain_independent_encoder {
 
     // use std::str::FromStr;
-    use ethers::core::types::{
-        // Address as EthAddress,
-        H256 as EthH256,
-    };
-    use custom_src16_encoder::src16_v1::custom01_src16::*;
+    // use ethers::core::types::{
+    //     Address as EthAddress,
+    //     H256 as EthH256,
+    // };
+
+    use fuels::types::Bits256;
+    use custom_src16_encoder::src16_v2::custom02_src16::*;
 
 
     /// Independently setup a SRC16Domain, Mail struct with populated data, and obtain
@@ -90,10 +92,9 @@ pub mod src16_independent_encoder {
         //     chain_id: 9889,
         //     verifying_contract: EthAddress::from_str("0x0000000000000000000000000000000000000001").unwrap(),
         // };
+        // let verifying_contract_32byte = EthH256::from_slice(mailme_contractid.as_slice());
 
-        //NOTE - See Note 1 in crates/custom-src16-encoder/src/src16_v1.rs
-        //
-        let verifying_contract_32byte = EthH256::from_slice(mailme_contractid.as_slice());
+        let verifying_contract_32byte = Bits256(mailme_contractid);
 
         let domain = SRC16Domain {
             name: "MyDomain".to_string(),
@@ -104,10 +105,10 @@ pub mod src16_independent_encoder {
 
         // Create the mail struct:
         //
-        let from_address = [0xAB; 32];
-        let dummy_from_address = EthH256::from_slice(from_address.as_ref());
-        let to_address = [0xCD; 32];
-        let dummy_to_address = EthH256::from_slice(to_address.as_ref());
+        let from_address: [u8; 32] = [0xAB; 32];
+        let dummy_from_address = Bits256(from_address);
+        let to_address: [u8; 32] = [0xCD; 32];
+        let dummy_to_address = Bits256(to_address);
         let dummy_contents = "A message from Alice to Bob.".to_string();
 
         let mail_data = Mail {
@@ -127,19 +128,4 @@ pub mod src16_independent_encoder {
 
 
 }
-
-
-
-
-
-
-fn convert_hex_string_to_address(hex_string: String) -> Address {
-    let some_addr_bytes = hex::decode(hex_string).unwrap();
-    let some_array: [u8; 32] = some_addr_bytes.try_into()
-        .expect("slice has incorrect length");
-    let some_addr = Address::from_bytes_ref(&some_array);
-
-    some_addr.to_owned()
-}
-
 

@@ -13,23 +13,98 @@ cargo test --package test-mail-me --lib -- test_mail_me::test_mailme_encode --ex
 
 ```
 
-## Other Tests with logs:
+## Ethers EIP712 Encoding Tests with logs:
 
-These tests validate the encoding schemes for Domain Separator, Type hash and Data Encoding within SRC-16.
+SRC-16 Is also backwards compatible with EIP712 encoding
+```console
+
+cargo test --package test-mail-me --lib -- test_eth_mail_me::test_mailme_encode_w_eip712domain --exact --show-output
+```
+
+## SRC-16 Backwards Compatibility:
+
+SRC-16 uses superabis in from Sway. This means that developers can use the `SRC16Domain` or `EIP712Domain` separators.
+
+```sway
+/// Base ABI interface for structured data hashing and signing
+///
+/// # Additional Information
+///
+/// This base ABI provides the common hashing functionality that is
+/// shared between the Fuel (SRC16) and Ethereum (EIP712) implementations.
+abi SRC16Base {
+
+    fn domain_separator_hash() -> b256;
+
+    fn data_type_hash() -> b256;
+}
+
+/// Fuel-specific implementation of structured data signing
+///
+/// # Additional Information
+///
+/// Extends SRC16Base with Fuel-specific domain separator handling using
+/// "SRC16Domain(string name,string version,uint64 chainId,address verifyingContract)"
+abi SRC16 : SRC16Base {
+    /// Returns the domain separator struct for Fuel
+    ///
+    /// # Returns
+    ///
+    /// * [SRC16Domain] - The domain separator containing Fuel-specific parameters
+    fn domain_separator() -> SRC16Domain;
+}
+
+/// Ethereum-compatible implementation of structured data signing
+///
+/// # Additional Information
+///
+/// Extends SRC16Base with Ethereum-compatible domain separator handling using
+/// "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+abi EIP712 : SRC16Base {
+    /// Returns the domain separator struct for Ethereum compatibility
+    ///
+    /// # Returns
+    ///
+    /// * [EIP712Domain] - The domain separator containing Ethereum-compatible parameters
+    fn domain_separator() -> EIP712Domain;
+}
+
+```
+
+
+
+## SRC-16 Tests with logs:
+
+These tests validate the encoding schemes for the `SRC16Domain` Separator, Type hash and Data Encoding within SRC-16.
+
+This uses only Fuel-rs related types and an external keccak256 crate, i.e., no Ethers-rs. i.e., A lite custom Token encoder for
+this demo project has been made and simple encoding mechanics make it easy for developers to use this demo as a "how to".
 ```console
 
 # Run domain type hash test:
-cargo test --package custom-src16-encoder --lib -- src16_v1::custom01_src16::domain_type_hash --exact --show-output
-
+cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::domain_type_hash --exact --show-output
 
 # Run domain separator test with `demo` values:
-cargo test --package custom-src16-encoder --lib -- src16_v1::custom01_src16::test_domain_separator_hash_fuel_address --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_domain_separator_hash_fuel_address --exact --show-output
 
 # Run structured hash for Mail data test:
-cargo test --package custom-src16-encoder --lib -- src16_v1::custom01_src16::test_struct_hash_for_mail --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_struct_hash_for_mail --exact --show-output
 
 # Run full encoding and hash test for Domain and Mail struct with `demo` values:
-cargo test --package custom-src16-encoder --lib -- src16_v1::custom01_src16::test_final_encoding_for_mail --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_final_encoding_for_mail --exact --show-output
+
+```
+
+## Ethers EIP712 Encoding Tests with logs:
+
+
+```console
+
+# Run the Domain, Type, Struct and Final Encoding with the demo Mail values using ethers-rs:
+cargo test --package eip712-encoder --lib -- eip712_v1::eip712_encoder_generic::test_eip712_final_encoding_for_mail --exact --show-output
+
+# With the static contract address: verifying_contract = "0xc563dea1a8c6b7dace5a1412a26b8a71637b08a7"
+cargo test --package eip712-encoder --lib -- eip712_v1::eip712_encoder_v1::test_eip712_final_encoding_for_mail --exact --show-output
 
 ```
 

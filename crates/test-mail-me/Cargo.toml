@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 custom-src16-encoder = { path = "../custom-src16-encoder/" }
+eip712-encoder = { path = "../eip712-encoder/" }
 
 ethers = { version = "2.0", features = ["rustls"] }
 
