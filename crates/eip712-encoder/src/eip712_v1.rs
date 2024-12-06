@@ -1,4 +1,4 @@
-
+#![allow(unused_imports)]
 use std::str::FromStr;
 use hex;
 
@@ -181,9 +181,9 @@ pub mod eip712_encoder_v1 {
         };
 
         // Verify the components of the EIP-712 structure
-        let domain_separator = mail_data.domain().unwrap().separator();
-        let type_hash = Mail::type_hash().unwrap();
-        let struct_hash = mail_data.struct_hash().unwrap();
+        let _domain_separator = mail_data.domain().unwrap().separator();
+        let _type_hash = Mail::type_hash().unwrap();
+        let _struct_hash = mail_data.struct_hash().unwrap();
 
         let encoded = mail_data.encode_eip712().unwrap();
 

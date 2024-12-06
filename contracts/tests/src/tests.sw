@@ -19,8 +19,9 @@ use standards::src16::{
 
 
 
-fn get_last_20_bytes(input: b256) -> b256 {
+// --- Test logic for extracting rightmost 20 bytes from ContractID:
 
+fn get_last_20_bytes(input: b256) -> b256 {
     // Convert b256 to Bytes.
     let input_bytes: Bytes = input.into();
     // Create a new Bytes with 32 byte capacity that will hold the result
@@ -38,11 +39,10 @@ fn get_last_20_bytes(input: b256) -> b256 {
     result_bytes.into()
 }
 
-// forc test src16_test_002_contract_id_conversion --logs
+// forc test src16_test_contract_id_conversion --logs
 //
 #[test]
-fn src16_test_002_contract_id_conversion() {
-
+fn src16_test_contract_id_conversion() {
     //                                      32-20 -->| |<-- 19-0
     //                                               | |
     let contract_id: b256 = 0xaBaAa9a8a7a6a5a4a3a2a1a0c3c2c1c0bfbebdbcbbbab9b8b7b6b5b4b3b2b1b0;
@@ -54,11 +54,6 @@ fn src16_test_002_contract_id_conversion() {
     let expected = 0x000000000000000000000000c3c2c1c0bfbebdbcbbbab9b8b7b6b5b4b3b2b1b0;
     assert(result == expected);
 }
-
-
-
-
-
 
 
 // --- Test hashing of Domain Separator:
@@ -76,7 +71,7 @@ fn src16_boiler_src16_domain_hash(){
         9889u64,
         dummy_contractid
     ).domain_hash();
-    // log(b256_to_hex(domain_type_hash));
+    log(b256_to_hex(domain_type_hash));
 
     let expected_domain_hash: b256 = 0xb7398b1020c9fc9ecea32c3bdd18b471b814ed9a1a142addb0ef5bde2fab7c07;
     assert(domain_type_hash == expected_domain_hash );
@@ -436,7 +431,7 @@ fn eip712_demo_encode_hash(){
     match payload.encode_hash() {
         Some(hash) => {
             log(b256_to_hex(hash));
-            // assert(hash == expected_final_hash );
+            assert(hash == expected_final_hash );
         },
         None => {
             revert(445u64);

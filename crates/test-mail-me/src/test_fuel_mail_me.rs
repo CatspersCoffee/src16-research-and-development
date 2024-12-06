@@ -1,11 +1,3 @@
-use fuels::prelude::*;
-//         Address, ContractId,
-//     },
-//     types::{
-//         Bits256, EvmAddress, Bytes32, B512,
-//     },
-//     accounts::wallet::WalletUnlocked,
-// };
 
 use crate::setup_env::setup_test_environment_fuelmailme;
 use crate::interfaces::*;
@@ -68,15 +60,8 @@ pub async fn test_mailme_encode_w_src16domain() {
 
 pub mod src16domain_independent_encoder {
 
-    // use std::str::FromStr;
-    // use ethers::core::types::{
-    //     Address as EthAddress,
-    //     H256 as EthH256,
-    // };
-
     use fuels::types::Bits256;
     use custom_src16_encoder::src16_v2::custom02_src16::*;
-
 
     /// Independently setup a SRC16Domain, Mail struct with populated data, and obtain
     /// the typed data hash.
@@ -86,14 +71,6 @@ pub mod src16domain_independent_encoder {
 
         // Setup signer domain:
         //
-        // let domain = SRC16Domain {
-        //     name: "MyDomain".to_string(),
-        //     version: "1".to_string(),
-        //     chain_id: 9889,
-        //     verifying_contract: EthAddress::from_str("0x0000000000000000000000000000000000000001").unwrap(),
-        // };
-        // let verifying_contract_32byte = EthH256::from_slice(mailme_contractid.as_slice());
-
         let verifying_contract_32byte = Bits256(mailme_contractid);
 
         let domain = SRC16Domain {
@@ -116,9 +93,6 @@ pub mod src16domain_independent_encoder {
             to: dummy_to_address,
             contents: dummy_contents,
         };
-
-        // let mail_data_struct_hash = mail_data.struct_hash();
-        // println!("Mail data hash: 0x{}", hex::encode(mail_data_struct_hash));
 
         let payload = (domain, mail_data);
         let encoded_hash = payload.encode_src16().map_err(|e| e.to_string()).unwrap();
