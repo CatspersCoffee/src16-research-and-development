@@ -3,7 +3,15 @@ name = "core"
 source = "path+from-root-6A8836696D55BC6E"
 
 [[package]]
-name = "src16_typed_data"
+name = "src16_ethereum_typed_data"
+source = "member"
+dependencies = [
+    "standards",
+    "std",
+]
+
+[[package]]
+name = "src16_fuel_typed_data"
 source = "member"
 dependencies = [
     "standards",
@@ -12,7 +20,7 @@ dependencies = [
 
 [[package]]
 name = "standards"
-source = "path+from-root-261D42ACCFA07A98"
+source = "path+from-root-FEBD4F85316E78BA"
 dependencies = ["std"]
 
 [[package]]
