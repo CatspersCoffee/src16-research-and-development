@@ -121,10 +121,13 @@ forc 0.66.5
 $ forc test
 
 # SRC-16 Specific Tests:
-src16_boiler_domain_hash
+src16_test_contract_id_conversion
+src16_boiler_src16_domain_hash
+src16_boiler_eip712_domain_hash
 src16_encode_data
 src16_demo_typed_data_hash
 src16_demo_encode_hash
+eip712_demo_encode_hash
 
 # You can also uncomment out the log()'s to see the actual data (use  --logs posfix ).
 
