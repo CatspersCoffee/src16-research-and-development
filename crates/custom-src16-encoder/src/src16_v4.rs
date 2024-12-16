@@ -5,11 +5,25 @@ use hex;
 use fuels::types::{Bytes32, U256, B512, Bits256};
 
 
-pub mod custom02_src16 {
+pub mod custom04_src16 {
 
     use super::*;
     use sha3::{Digest, Keccak256};
-    use crate::src16_token::{self, Token, keccak256};
+
+    use crate::src16_encoder2::{
+        self, encode, keccak256, Token, TypedData, ParamType
+    };
+
+    use serde_json::json;
+    use serde::{Deserialize, Serialize};
+    use serde::{Deserializer};
+
+    use crate::hex_serde;
+
+    // use serde::{de::Deserializer, de::Error as SerdeError};
+
+
+
 
     /// Pre-computed value of the following expression:
     ///
@@ -35,14 +49,55 @@ pub mod custom02_src16 {
     //---------------------------------------------------------------------------
 
     // This struct represents the SRC16Domain "the domain type"
+
+    // #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SRC16Domain {
         pub name: String,
         pub version: String,
+        #[serde(
+            rename = "chainId",
+            deserialize_with = "deserialize_stringified_numeric",
+        )]
         pub chain_id: u64,
-        pub verifying_contract: Bits256,
+        #[serde(rename = "verifyingContract")]
+        pub verifying_contract: Bytes32,
     }
 
-    // cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::domain_type_hash --exact --show-output
+    fn deserialize_stringified_numeric<'de, D>(deserializer: D) -> Result<u64, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+
+    /*
+    /// Helper function to deserialize string numbers into u64
+    fn deserialize_stringified_numeric_opt<'de, D>(
+        deserializer: D
+    ) -> Result<Option<u64>, D::Error>
+    where
+        D: Deserializer<'de> + serde::de::Error,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringifiedNumeric {
+            String(String),
+            Number(u64),
+        }
+
+        match Option::<StringifiedNumeric>::deserialize(deserializer)? {
+            Some(StringifiedNumeric::String(s)) => {
+                s.parse().map(Some).map_err(D::custom)
+            }
+            Some(StringifiedNumeric::Number(n)) => Ok(Some(n)),
+            None => Ok(None),
+        }
+    }
+    */
+
+    // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::domain_type_hash --exact --show-output
     #[test]
     pub fn domain_type_hash(){
         let expected_domain_type_hash = hex::decode("3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e").unwrap();
@@ -133,15 +188,16 @@ pub mod custom02_src16 {
             // 4. Add chainId
             let mut c_bytes = [0u8; 32];
             c_bytes[24..32].copy_from_slice(&self.chain_id.to_be_bytes());
-            let token4 = src16_token::number_to_token(self.chain_id);
+            let token4 = src16_encoder2::number_to_token(self.chain_id);
             println!(" ");
             println!("Chain ID (hex)               : {}", hex::encode(c_bytes));
             println!("Chain ID Token               : {:?}", token4);
 
-            tokens.push(src16_token::number_to_token(self.chain_id));
+            tokens.push(src16_encoder2::number_to_token(self.chain_id));
 
 
             // 5. Add verifyingContract
+            /*
             let token5 = Token::FixedBytes(self.verifying_contract.0.to_vec());
             let mut vcbytes = [0u8; 32];
             vcbytes.copy_from_slice(&self.verifying_contract.0);
@@ -150,15 +206,35 @@ pub mod custom02_src16 {
             println!("Verifying Contract Token     : {:?}", token5);
 
             tokens.push(Token::FixedBytes(self.verifying_contract.0.to_vec()));
+            */
+
+            // let token5 = Token::FixedBytes(self.verifying_contract.to_vec());
+            // let mut vcbytes = [0u8; 32];
+            // vcbytes.copy_from_slice(&self.verifying_contract.as_slice());
+            // println!(" ");
+            // println!("Verifying Contract           : {}", hex::encode(vcbytes));
+            // println!("Verifying Contract Token     : {:?}", token5);
+
+            // tokens.push(Token::FixedBytes(self.verifying_contract.to_vec()));
+
+
+            let contract_bytes: [u8; 32] = self.verifying_contract.into();
+            let token5 = Token::FixedBytes(contract_bytes);
+            println!(" ");
+            println!("Verifying Contract           : {}", hex::encode(&contract_bytes));
+            println!("Verifying Contract Token     : {:?}", token5);
+
+            tokens.push(token5);
+
 
 
             // Encode all tokens
-            let encoded = src16_token::encode(&tokens);
+            let encoded = src16_encoder2::encode(&tokens);
             println!(" ");
             println!("Encoded Tokens     : {}", hex::encode(&encoded));
 
             // Compute final hash
-            let final_hash = src16_token::keccak256(encoded.as_slice());
+            let final_hash = src16_encoder2::keccak256(encoded.as_slice());
             println!(" ");
             println!("Final Hash         : {}", hex::encode(&final_hash));
             println!(" ");
@@ -180,7 +256,7 @@ pub mod custom02_src16 {
 
     }
 
-    // cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_domain_separator_hash_fuel_address --exact --show-output
+    // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_domain_separator_hash_fuel_address --exact --show-output
     //
     // SRC16_DOMAIN_TYPE_HASH   : 3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e
     // Name Hash                : 49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20
@@ -193,9 +269,13 @@ pub mod custom02_src16 {
     #[test]
     fn test_domain_separator_hash_fuel_address() {
 
+        // let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
+        // fuel_verifying_contract[31] = 0x01;
+        // let verifying_contract_32byte = Bits256(fuel_verifying_contract);
+
         let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
         fuel_verifying_contract[31] = 0x01;
-        let verifying_contract_32byte = Bits256(fuel_verifying_contract);
+        let verifying_contract_32byte = Bytes32::from(fuel_verifying_contract);
 
         let domain = SRC16Domain {
             name: "MyDomain".to_string(),
@@ -232,7 +312,7 @@ pub mod custom02_src16 {
         /// cfc972d321844e0304c5a752957425d5df13c3b09c563624a806b517155d7056
         fn type_hash() -> [u8; 32] {
             let type_string = "Mail(bytes32 from,bytes32 to,string contents)";
-            src16_token::keccak256(type_string.as_bytes())
+            src16_encoder2::keccak256(type_string.as_bytes())
         }
 
         fn manual_encode_string(value: &str) -> [u8; 32] {
@@ -255,7 +335,7 @@ pub mod custom02_src16 {
             for item in array {
                 encoded.extend_from_slice(&encoder(item));
             }
-            src16_token::keccak256(encoded.as_slice())
+            src16_encoder2::keccak256(encoded.as_slice())
         }
 
         // manually calcualte struct hash
@@ -298,7 +378,7 @@ pub mod custom02_src16 {
             // println!("encoded: {}", hex::encode(&encoded));
             // println!(" ");
 
-            let encoded_hash = src16_token::keccak256(encoded.as_slice());
+            let encoded_hash = src16_encoder2::keccak256(encoded.as_slice());
             // println!("encoded struct hash   : {}", hex::encode(&encoded_hash));
             // println!(" ");
 
@@ -309,7 +389,7 @@ pub mod custom02_src16 {
     }
 
 
-    // cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_struct_hash_for_mail --exact --show-output
+    // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_struct_hash_for_mail --exact --show-output
     /*
     type_hash_encoded     : cfc972d321844e0304c5a752957425d5df13c3b09c563624a806b517155d7056
     from_encoded_hash     : abababababababababababababababababababababababababababababababab
@@ -363,21 +443,25 @@ pub mod custom02_src16 {
             digest_input.extend_from_slice(&[0x19, 0x01]);
             digest_input.extend_from_slice(&domain_separator);
             digest_input.extend_from_slice(&struct_hash);
-            let hash = src16_token::keccak256(digest_input.as_slice());
+            let hash = src16_encoder2::keccak256(digest_input.as_slice());
 
             Ok(hash)
         }
     }
 
-    // cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_final_encoding_for_mail --exact --show-output
+    // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_final_encoding_for_mail --exact --show-output
     #[test]
     fn test_final_encoding_for_mail() {
 
         // Setup signer domain:
         //
+        // let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
+        // fuel_verifying_contract[31] = 0x01;
+        // let verifying_contract_32byte = Bits256(fuel_verifying_contract);
+
         let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
         fuel_verifying_contract[31] = 0x01;
-        let verifying_contract_32byte = Bits256(fuel_verifying_contract);
+        let verifying_contract_32byte = Bytes32::from(fuel_verifying_contract);
 
         let domain = SRC16Domain {
             name: "MyDomain".to_string(),
@@ -413,6 +497,109 @@ pub mod custom02_src16 {
         let expected_final_encoded_hash = hex::decode("97b74437f3c96315f4156ced725a7ccc085dcfef9cde7e7a810806a93ee98032").unwrap();
 
         assert_eq!(encoded_hash, expected_final_encoded_hash.as_slice());
+    }
+
+
+    //---------------------------------------------------------------------------
+    //
+    //  Mail Encoding using TypeData Encoder
+    //
+    //---------------------------------------------------------------------------
+
+
+
+    // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_mail_encoding --exact --show-output
+    #[test]
+    fn test_mail_encoding() {
+        let from_address: [u8; 32] = [0xAB; 32];
+        let to_address: [u8; 32] = [0xCD; 32];
+        let contents = "A message from Alice to Bob.";
+
+        // The JSON structure stays the same since it's the external interface
+        let typed_data_json = json!({
+            "types": {
+                "SRC16Domain": [
+                    {"name": "name", "type": "string"},
+                    {"name": "version", "type": "string"},
+                    {"name": "chainId", "type": "uint256"},
+                    {"name": "verifyingContract", "type": "address"}
+                ],
+                "Mail": [
+                    {"name": "from", "type": "bytes32"},
+                    {"name": "to", "type": "bytes32"},
+                    {"name": "contents", "type": "string"}
+                ]
+            },
+            "primaryType": "Mail",
+            "domain": {
+                "name": "MyDomain",
+                "version": "1",
+                "chainId": "9889",
+                "verifyingContract": format!("0x{}", hex::encode([0u8; 31].into_iter().chain([1u8].into_iter()).collect::<Vec<_>>()))
+            },
+            "message": {
+                "from": format!("0x{}", hex::encode(from_address)),
+                "to": format!("0x{}", hex::encode(to_address)),
+                "contents": contents
+            }
+        });
+
+        // Parse JSON into TypedData
+        let typed_data: TypedData = match serde_json::from_value(typed_data_json) {
+            Ok(data) => data,
+            Err(e) => {
+                panic!("Failed to parse JSON: {}", e);
+            }
+        };
+
+        // Now using the new encoding with ParamTypes
+        let encoded = match typed_data.encode_data(
+            "Mail",
+            &serde_json::Value::Object(serde_json::Map::from_iter(typed_data.message.clone()))
+        ) {
+            Ok(tokens) => {
+                println!("\nEncoded tokens:");
+                for token in &tokens {
+                    match token {
+                        Token::FixedBytes(bytes) => {
+                            let param_type = ParamType::Bytes32;
+                            println!("FixedBytes({:?}): 0x{}", param_type, hex::encode(bytes))
+                        },
+                        Token::Address(addr) => {
+                            let param_type = ParamType::Address;
+                            println!("Address({:?}): 0x{}", param_type, hex::encode(addr))
+                        },
+                        Token::String(s) => {
+                            let param_type = ParamType::String;
+                            println!("String({:?}): {}", param_type, s)
+                        },
+                        Token::Uint(num) => {
+                            let param_type = ParamType::Uint(256);
+                            println!("Uint({:?}): 0x{}", param_type, hex::encode(num))
+                        },
+                        Token::Bool(value) => {
+                            let param_type = ParamType::Bool;
+                            println!("Bool({:?}): {}", param_type, value)
+                        }
+                    }
+                }
+                tokens
+            },
+            Err(e) => {
+                panic!("Failed to encode data: {}", e);
+            }
+        };
+
+        // Create final hash
+        let final_hash = keccak256(&encode(&encoded));
+        println!("final_hash: 0x{}", hex::encode(final_hash));
+
+        // Verify the hash matches expected value
+        let expected_struct_hash = hex::decode(
+            "23dd3d8fadde568374db0b57b0d5e17254b4df0abca45f56da433f5c97f49775"
+        ).expect("Failed to decode expected hash");
+
+        assert_eq!(final_hash.as_slice(), expected_struct_hash.as_slice());
     }
 
 
