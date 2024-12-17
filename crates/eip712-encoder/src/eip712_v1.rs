@@ -124,13 +124,29 @@ pub mod eip712_encoder_v1 {
         name = "MyDomain",
         version = "1",
         chain_id = 9889,
-        verifying_contract = "0xc563dea1a8c6b7dace5a1412a26b8a71637b08a7"
+        verifying_contract = "0xa5d048a236a71d5eb8fa46fc329abe2b87f33029"
     )]
     pub struct Mail {
         pub from: H256,
         pub to: H256,
         pub contents: String,
     }
+
+    // for TESTING Sway:
+    // #[derive(Eip712, Clone, Debug, EthAbiType)]
+    // #[eip712(
+    //     name = "MyDomain",
+    //     version = "1",
+    //     chain_id = 9889,
+    //     // verifying_contract = "0x0000000000000000000000000000000000000001"
+    //     verifying_contract = "0xc3c2c1c0bfbebdbcbbbab9b8b7b6b5b4b3b2b1b0"
+    // )]
+    // pub struct Mail {
+    //     pub from: H256,
+    //     pub to: H256,
+    //     pub contents: String,
+    // }
+
 
     // cargo test --package eip712-encoder --lib -- eip712_v1::eip712_encoder_v1::test_eip712_final_encoding_for_mail --exact --show-output
     #[test]

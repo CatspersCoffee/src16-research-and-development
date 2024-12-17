@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 use std::str::FromStr;
 use hex;
-use fuels::types::{Bytes32, U256, B512, Bits256};
+use fuels::types::{Bytes32, U256, B512, Bits256, ContractId, Address};
 
 
 pub mod custom04_src16 {
@@ -27,9 +27,9 @@ pub mod custom04_src16 {
 
     /// Pre-computed value of the following expression:
     ///
-    /// `keccak256("SRC16Domain(string name,string version,uint256 chainId,address verifyingContract)")`
+    /// `keccak256("SRC16Domain(string name,string version,uint256 chainId,contractId verifyingContract)")`
     ///
-    /// 0x3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e
+    /// 0x10f132d1adc99105bb9ad0d98956a93f35bda5c77713ac13adc489609c39336f
     ///
     /// Reference:
     /// from the ethers-contract/tests/solidity-contracts/DeriveEip712Test.sol
@@ -38,8 +38,10 @@ pub mod custom04_src16 {
     ///     b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
     /// );
     ///
-    pub const SRC16_DOMAIN_TYPE_HASH: [u8; 32] = [61, 153, 82, 13, 104, 145, 140, 57, 209, 21, 192, 177,
-     123, 168, 69, 76, 23, 35, 23, 94, 207, 75, 56, 210, 85, 40, 254, 10, 17, 125, 183, 142];
+    pub const SRC16_DOMAIN_TYPE_HASH: [u8; 32] = [
+        16, 241, 50, 209, 173, 201, 145, 5, 187, 154, 208, 217, 137, 86, 169, 63,
+        53, 189, 165, 199, 119, 19, 172, 19, 173, 196, 137, 96, 156, 57, 51, 111
+    ];
 
 
     //---------------------------------------------------------------------------
@@ -61,7 +63,7 @@ pub mod custom04_src16 {
         )]
         pub chain_id: u64,
         #[serde(rename = "verifyingContract")]
-        pub verifying_contract: Bytes32,
+        pub verifying_contract: ContractId,
     }
 
     fn deserialize_stringified_numeric<'de, D>(deserializer: D) -> Result<u64, D::Error>
@@ -100,12 +102,12 @@ pub mod custom04_src16 {
     // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::domain_type_hash --exact --show-output
     #[test]
     pub fn domain_type_hash(){
-        let expected_domain_type_hash = hex::decode("3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e").unwrap();
+        let expected_domain_type_hash = hex::decode("10f132d1adc99105bb9ad0d98956a93f35bda5c77713ac13adc489609c39336f").unwrap();
         let expected_domain_type_hash_bytes: [u8; 32] = expected_domain_type_hash.as_slice().try_into().unwrap();
 
         println!("expected_domain_type_hash_bytes: {}", hex::encode(expected_domain_type_hash_bytes));
 
-        let domain_type_utf8 = "SRC16Domain(string name,string version,uint256 chainId,address verifyingContract)";
+        let domain_type_utf8 = "SRC16Domain(string name,string version,uint256 chainId,contractId verifyingContract)";
 
         let mut hasher = Keccak256::new();
         hasher.update(domain_type_utf8.as_bytes());
@@ -144,7 +146,7 @@ pub mod custom04_src16 {
         5. Add chainId (as 32-byte big-endian)
         result += uint256(chainId).to_be_bytes()
 
-        6. Add verifyingContract (as 32-byte address on Fuel)
+        6. Add verifyingContract (as 32-byte ContractId on Fuel)
         result += address(verifyingContract)
 
         7. Compute final hash
@@ -243,50 +245,46 @@ pub mod custom04_src16 {
         }
 
         /*
-        https://emn178.github.io/online-tools/keccak_256.html?input=3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc600000000000000000000000000000000000000000000000000000000000026a10000000000000000000000000000000000000000000000000000000000000001&input_type=hex&output_type=hex
+        https://emn178.github.io/online-tools/keccak_256.html?input=10f132d1adc99105bb9ad0d98956a93f35bda5c77713ac13adc489609c39336f49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc600000000000000000000000000000000000000000000000000000000000026a10000000000000000000000000000000000000000000000000000000000000001&input_type=hex&output_type=hex
 
-        3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e --> SRC16_DOMAIN_TYPE_HASH
+        10f132d1adc99105bb9ad0d98956a93f35bda5c77713ac13adc489609c39336f --> SRC16_DOMAIN_TYPE_HASH
         49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20 --> Name Hash
         c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6 --> Version Hash
         00000000000000000000000000000000000000000000000000000000000026a1 --> Chain ID
         0000000000000000000000000000000000000000000000000000000000000001 --> Verifying Contract
 
-        b7398b1020c9fc9ecea32c3bdd18b471b814ed9a1a142addb0ef5bde2fab7c07 --> final hash
+        a4a3e8ae873833c636439e06bda4dce44a171cc137900fc3af7aa26c6085b403 --> final hash
         */
 
     }
 
     // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_domain_separator_hash_fuel_address --exact --show-output
     //
-    // SRC16_DOMAIN_TYPE_HASH   : 3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e
+    // SRC16_DOMAIN_TYPE_HASH   : 10f132d1adc99105bb9ad0d98956a93f35bda5c77713ac13adc489609c39336f
     // Name Hash                : 49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20
     // Version Hash             : c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6
     // Chain ID (hex)           : 00000000000000000000000000000000000000000000000000000000000026a1
     // Verifying Contract       : 0000000000000000000000000000000000000000000000000000000000000001
-    // Encoded Tokens           : 3d99520d68918c39d115c0b17ba8454c1723175ecf4b38d25528fe0a117db78e49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc600000000000000000000000000000000000000000000000000000000000026a10000000000000000000000000000000000000000000000000000000000000001
-    // Final Hash               : b7398b1020c9fc9ecea32c3bdd18b471b814ed9a1a142addb0ef5bde2fab7c07
+    // Encoded Tokens           : 10f132d1adc99105bb9ad0d98956a93f35bda5c77713ac13adc489609c39336f49df7211c4cf1749975aefc051c32b30ddc90cbb9d8b1de59ba5c6eb5cb36b20c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc600000000000000000000000000000000000000000000000000000000000026a10000000000000000000000000000000000000000000000000000000000000001
+    // Final Hash               : a4a3e8ae873833c636439e06bda4dce44a171cc137900fc3af7aa26c6085b403
     //
     #[test]
     fn test_domain_separator_hash_fuel_address() {
 
-        // let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
-        // fuel_verifying_contract[31] = 0x01;
-        // let verifying_contract_32byte = Bits256(fuel_verifying_contract);
-
         let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
         fuel_verifying_contract[31] = 0x01;
-        let verifying_contract_32byte = Bytes32::from(fuel_verifying_contract);
+        let verifying_contract_id = ContractId::from(fuel_verifying_contract);
 
         let domain = SRC16Domain {
             name: "MyDomain".to_string(),
             version: "1".to_string(),
             chain_id: 9889,
-            verifying_contract: verifying_contract_32byte,
+            verifying_contract: verifying_contract_id,
         };
         let domain_separator_hash = domain.domain_separator_hash();
         println!("Domain Separator Hash : 0x{}", hex::encode(domain_separator_hash));
 
-        let expected_domain_separator_hash = hex::decode("b7398b1020c9fc9ecea32c3bdd18b471b814ed9a1a142addb0ef5bde2fab7c07").unwrap();
+        let expected_domain_separator_hash = hex::decode("a4a3e8ae873833c636439e06bda4dce44a171cc137900fc3af7aa26c6085b403").unwrap();
         assert_eq!(expected_domain_separator_hash, domain_separator_hash.as_slice());
     }
 
@@ -300,18 +298,18 @@ pub mod custom04_src16 {
     // This struct represent the Typed Structured Data
     #[derive(Clone, Debug)]
     pub struct Mail {
-        pub from: Bits256,
-        pub to: Bits256,
+        pub from: Address,
+        pub to: Address,
         pub contents: String,
     }
 
 
     impl Mail {
 
-        /// https://emn178.github.io/online-tools/keccak_256.html?input=Mail(bytes32%20from%2Cbytes32%20to%2Cstring%20contents)&input_type=utf-8&output_type=hex
-        /// cfc972d321844e0304c5a752957425d5df13c3b09c563624a806b517155d7056
+        /// https://emn178.github.io/online-tools/keccak_256.html?input=Mail(address%20from%2Caddress%20to%2Cstring%20contents)&input_type=utf-8&output_type=hex
+        /// 536e54c54e6699204b424f41f6dea846ee38ac369afec3e7c141d2c92c65e67f
         fn type_hash() -> [u8; 32] {
-            let type_string = "Mail(bytes32 from,bytes32 to,string contents)";
+            let type_string = "Mail(address from,address to,string contents)";
             src16_encoder2::keccak256(type_string.as_bytes())
         }
 
@@ -322,6 +320,12 @@ pub mod custom04_src16 {
 
         fn manual_encode_h256(value: &Bits256) -> [u8; 32] {
             value.0
+        }
+
+        fn manual_encode_address(value: &Address) -> [u8; 32] {
+            let mut bytes = [0u8; 32];
+            bytes.copy_from_slice(value.as_slice());
+            bytes
         }
 
         fn manual_encode_u256(value: &U256) -> [u8; 32] {
@@ -352,18 +356,18 @@ pub mod custom04_src16 {
 
             // Encode: return from --> H256
             // 2.
-            // let from_encoded_hash = Self::manual_encode_h256(&self.from);
+            // let from_encoded_hash = Self::manual_encode_address(&self.from);
             // println!("from_encoded_hash     : {}", hex::encode(from_encoded_hash));
 
-            encoded.extend_from_slice(&Self::manual_encode_h256(&self.from));
+            encoded.extend_from_slice(&Self::manual_encode_address(&self.from));
 
 
             // Encode: return to --> H256
             // 3.
-            // let to_encoded_hash = Self::manual_encode_h256(&self.to);
+            // let to_encoded_hash = Self::manual_encode_address(&self.to);
             // println!("to_encoded_hash       : {}", hex::encode(to_encoded_hash));
 
-            encoded.extend_from_slice(&Self::manual_encode_h256(&self.to));
+            encoded.extend_from_slice(&Self::manual_encode_address(&self.to));
 
 
             // Encode: Command --> String:
@@ -391,15 +395,15 @@ pub mod custom04_src16 {
 
     // cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_struct_hash_for_mail --exact --show-output
     /*
-    type_hash_encoded     : cfc972d321844e0304c5a752957425d5df13c3b09c563624a806b517155d7056
+    type_hash_encoded     : 536e54c54e6699204b424f41f6dea846ee38ac369afec3e7c141d2c92c65e67f
     from_encoded_hash     : abababababababababababababababababababababababababababababababab
     to_encoded_hash       : cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
     contents_encoded_hash : 4b67b2460d3b59a13388999b0d9cdabf6678d03f749051fed0c303f77e2f2de8
-    encoded: cfc972d321844e0304c5a752957425d5df13c3b09c563624a806b517155d7056ababababababababababababababababababababababababababababababababcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd4b67b2460d3b59a13388999b0d9cdabf6678d03f749051fed0c303f77e2f2de8
+    encoded: 536e54c54e6699204b424f41f6dea846ee38ac369afec3e7c141d2c92c65e67fababababababababababababababababababababababababababababababababcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd4b67b2460d3b59a13388999b0d9cdabf6678d03f749051fed0c303f77e2f2de8
 
-    encoded struct hash   : 23dd3d8fadde568374db0b57b0d5e17254b4df0abca45f56da433f5c97f49775
+    encoded struct hash   : 62d7ef9b8083d5789cc5631f3398ab2ed4e01644f4222716b8a487f351be2c37
 
-    https://emn178.github.io/online-tools/keccak_256.html?input=cfc972d321844e0304c5a752957425d5df13c3b09c563624a806b517155d7056ababababababababababababababababababababababababababababababababcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd4b67b2460d3b59a13388999b0d9cdabf6678d03f749051fed0c303f77e2f2de8&input_type=hex&output_type=hex
+    https://emn178.github.io/online-tools/keccak_256.html?input=536e54c54e6699204b424f41f6dea846ee38ac369afec3e7c141d2c92c65e67fababababababababababababababababababababababababababababababababcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd4b67b2460d3b59a13388999b0d9cdabf6678d03f749051fed0c303f77e2f2de8&input_type=hex&output_type=hex
     */
     #[test]
     fn test_struct_hash_for_mail() {
@@ -407,10 +411,10 @@ pub mod custom04_src16 {
         // Create the mail struct:
         //
         let from_address: [u8; 32] = [0xAB; 32];
-        let dummy_from_address = Bits256(from_address);
+        let dummy_from_address = Address::from(from_address);
 
         let to_address: [u8; 32] = [0xCD; 32];
-        let dummy_to_address = Bits256(to_address);
+        let dummy_to_address = Address::from(to_address);
         let dummy_contents = "A message from Alice to Bob.".to_string();
 
         let mail_data = Mail {
@@ -421,7 +425,7 @@ pub mod custom04_src16 {
 
         let mail_data_struct_hash = mail_data.struct_hash();
         println!("Mail data hash: 0x{}", hex::encode(mail_data_struct_hash));
-        let expected_struct_hash = hex::decode("23dd3d8fadde568374db0b57b0d5e17254b4df0abca45f56da433f5c97f49775").unwrap();
+        let expected_struct_hash = hex::decode("62d7ef9b8083d5789cc5631f3398ab2ed4e01644f4222716b8a487f351be2c37").unwrap();
 
         assert_eq!(mail_data_struct_hash, expected_struct_hash.as_slice());
     }
@@ -455,28 +459,24 @@ pub mod custom04_src16 {
 
         // Setup signer domain:
         //
-        // let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
-        // fuel_verifying_contract[31] = 0x01;
-        // let verifying_contract_32byte = Bits256(fuel_verifying_contract);
-
         let mut fuel_verifying_contract: [u8; 32] = [0x00; 32];
         fuel_verifying_contract[31] = 0x01;
-        let verifying_contract_32byte = Bytes32::from(fuel_verifying_contract);
+        let verifying_contract_id = ContractId::from(fuel_verifying_contract);
 
         let domain = SRC16Domain {
             name: "MyDomain".to_string(),
             version: "1".to_string(),
             chain_id: 9889,
-            verifying_contract: verifying_contract_32byte,
+            verifying_contract: verifying_contract_id,
         };
 
         // Create the mail struct:
         //
         let from_address: [u8; 32] = [0xAB; 32];
-        let dummy_from_address = Bits256(from_address);
+        let dummy_from_address = Address::from(from_address);
 
         let to_address: [u8; 32] = [0xCD; 32];
-        let dummy_to_address = Bits256(to_address);
+        let dummy_to_address = Address::from(to_address);
         let dummy_contents = "A message from Alice to Bob.".to_string();
 
         let mail_data = Mail {
@@ -494,7 +494,7 @@ pub mod custom04_src16 {
 
         println!("encoded_hash: {}", hex::encode(encoded_hash));
         println!(" ");
-        let expected_final_encoded_hash = hex::decode("97b74437f3c96315f4156ced725a7ccc085dcfef9cde7e7a810806a93ee98032").unwrap();
+        let expected_final_encoded_hash = hex::decode("df830c4a36744c712c3057faf8142a8b56946d3319b7c7688310407d3fab0e96").unwrap();
 
         assert_eq!(encoded_hash, expected_final_encoded_hash.as_slice());
     }

@@ -1,8 +1,0 @@
-[project]
-authors = ["catsper"]
-entry = "lib.sw"
-license = "Apache-2.0"
-name = "tests"
-
-[dependencies]
-standards = { path = "../standards" }

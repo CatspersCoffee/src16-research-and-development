@@ -89,7 +89,7 @@ impl TypedDataHash for {type_name} {{
 
 
 pub fn generate_sway_file(type_name: &str, typed_data_json: &serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
-    // First generate the struct code
+    // Generate the struct code
     let struct_code = format!(r#"/// A generated struct representing a {type_name} message
 pub struct {type_name} {{
 "#, type_name = type_name);
