@@ -105,8 +105,8 @@ pub mod mail_me_fuel_interface {
         let fcr = mailme_instance
             .methods()
             .send_mail_get_hash(
-                Bits256(from_addr.try_into().expect("slice with incorrect length")),
-                Bits256(to_addr.try_into().expect("slice with incorrect length")),
+                from_addr,
+                to_addr,
                 message,
             )
             .call()

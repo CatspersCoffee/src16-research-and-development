@@ -3,6 +3,11 @@ name = "core"
 source = "path+from-root-6A8836696D55BC6E"
 
 [[package]]
+name = "helpers"
+source = "path+from-root-F252333F9C4A5D78"
+dependencies = ["std"]
+
+[[package]]
 name = "standards"
 source = "path+from-root-F252333F9C4A5D78"
 dependencies = ["std"]
@@ -16,6 +21,7 @@ dependencies = ["core"]
 name = "tests"
 source = "member"
 dependencies = [
+    "helpers",
     "standards",
     "std",
 ]

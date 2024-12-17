@@ -3,7 +3,7 @@ use crate::setup_env::setup_test_environment_fuelmailme;
 use crate::interfaces::*;
 use crate::helpers::*;
 
-// cargo test --package test-mail-me --lib -- test_mail_me::test_mailme_encode_w_src16domain --exact --show-output
+// cargo test --package test-mail-me --lib -- test_fuel_mail_me::test_mailme_encode_w_src16domain --exact --show-output
 #[tokio::test]
 pub async fn test_mailme_encode_w_src16domain() {
 
@@ -54,14 +54,15 @@ pub async fn test_mailme_encode_w_src16domain() {
     println!("\n-------------------------------------------------------------------------------------------");
 
     assert_eq!(encoded_hash_cc, encoded_hash_independent);
+
 }
 
 
 
 pub mod src16domain_independent_encoder {
 
-    use fuels::types::Bits256;
-    use custom_src16_encoder::src16_v2::custom02_src16::*;
+    use fuels::types::{ContractId, Address};
+    use custom_src16_encoder::src16_v4::custom04_src16::*;
 
     /// Independently setup a SRC16Domain, Mail struct with populated data, and obtain
     /// the typed data hash.
@@ -71,21 +72,22 @@ pub mod src16domain_independent_encoder {
 
         // Setup signer domain:
         //
-        let verifying_contract_32byte = Bits256(mailme_contractid);
+        let verifying_contract_id = ContractId::from(mailme_contractid);
+
 
         let domain = SRC16Domain {
             name: "MyDomain".to_string(),
             version: "1".to_string(),
             chain_id: 9889,
-            verifying_contract: verifying_contract_32byte,
+            verifying_contract: verifying_contract_id,
         };
 
         // Create the mail struct:
         //
         let from_address: [u8; 32] = [0xAB; 32];
-        let dummy_from_address = Bits256(from_address);
+        let dummy_from_address = Address::from(from_address);
         let to_address: [u8; 32] = [0xCD; 32];
-        let dummy_to_address = Bits256(to_address);
+        let dummy_to_address = Address::from(to_address);
         let dummy_contents = "A message from Alice to Bob.".to_string();
 
         let mail_data = Mail {
