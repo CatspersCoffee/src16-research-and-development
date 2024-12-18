@@ -1,15 +1,15 @@
 # src16-research-and-development
 
-This is demo research and development project that utilizes SRC-16 Structured Typed Data within a Contact `MailMe` to encode a typed data struct `Mail` with data. The contract call returns the value of the encoded data hash with the user supplied data.
+This is demo research and development project that utilizes SRC-16 Structured Typed Data within a Contact `MailMe` to encode a typed data struct `Mail` with data. The contract call returns the value of the encoded data hash of the users supplied data to create a `Mail` typed data struct in the signing domain.
 
 
 ## Run MailMe Contract call:
 
 This calls the function `send_mail_get_hash()` in a deployed `MailMe` example contract with the data for a `Mail` struct. The
-contract Utilizes SRC-16 to encode and hash the contents to spec.
+contract utilizes `SRC16Domain` from the standard SRC-16 to encode and hash the contents to spec.
 ```console
 
-cargo test --package test-mail-me --lib -- test_mail_me::test_mailme_encode --exact --show-output
+cargo test --package test-mail-me --lib -- test_fuel_mail_me::test_mailme_encode_w_src16domain --exact --show-output
 
 ```
 
@@ -82,16 +82,16 @@ this demo project has been made and simple encoding mechanics make it easy for d
 ```console
 
 # Run domain type hash test:
-cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::domain_type_hash --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::domain_type_hash --exact --show-output
 
 # Run domain separator test with `demo` values:
-cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_domain_separator_hash_fuel_address --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_domain_separator_hash_fuel_address --exact --show-output
 
 # Run structured hash for Mail data test:
-cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_struct_hash_for_mail --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_struct_hash_for_mail --exact --show-output
 
 # Run full encoding and hash test for Domain and Mail struct with `demo` values:
-cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::test_final_encoding_for_mail --exact --show-output
+cargo test --package custom-src16-encoder --lib -- src16_v4::custom04_src16::test_final_encoding_for_mail --exact --show-output
 
 ```
 
@@ -103,7 +103,7 @@ cargo test --package custom-src16-encoder --lib -- src16_v2::custom02_src16::tes
 # Run the Domain, Type, Struct and Final Encoding with the demo Mail values using ethers-rs:
 cargo test --package eip712-encoder --lib -- eip712_v1::eip712_encoder_generic::test_eip712_final_encoding_for_mail --exact --show-output
 
-# With the static contract address: verifying_contract = "0xc563dea1a8c6b7dace5a1412a26b8a71637b08a7"
+# With the static contract address: verifying_contract = "0xa5d048a236a71d5eb8fa46fc329abe2b87f33029" (see notes in `/contracts/docs/src/src-16-typed-structured-data.md`)
 cargo test --package eip712-encoder --lib -- eip712_v1::eip712_encoder_v1::test_eip712_final_encoding_for_mail --exact --show-output
 
 ```
@@ -120,14 +120,17 @@ forc 0.66.5
 ```
 $ forc test
 
-# SRC-16 Specific Tests:
-src16_test_contract_id_conversion
-src16_boiler_src16_domain_hash
-src16_boiler_eip712_domain_hash
-src16_encode_data
-src16_demo_typed_data_hash
-src16_demo_encode_hash
-eip712_demo_encode_hash
+# All Tests:
+    Running 9 tests, filtered 0 tests
+    test src16_encode_data ... ok (19.168353ms, 20557 gas)
+    test src16_encode_fixed_aray ... ok (23.83525ms, 24899 gas)
+    test src16_boiler_src16_domain_hash ... ok (40.0333ms, 36383 gas)
+    test src16_demo_typed_data_hash ... ok (40.259214ms, 36914 gas)
+    test src16_demo_encode_hash ... ok (54.227515ms, 40733 gas)
+    test src16_test_contract_id_conversion ... ok (31.732037ms, 35119 gas)
+    test src16_boiler_eip712_domain_hash ... ok (37.528612ms, 38472 gas)
+    test eip712_demo_typed_data_hash ... ok (41.912107ms, 37031 gas)
+    test eip712_demo_encode_hash ... ok (9.55555ms, 9111 gas)
 
 # You can also uncomment out the log()'s to see the actual data (use  --logs posfix ).
 
