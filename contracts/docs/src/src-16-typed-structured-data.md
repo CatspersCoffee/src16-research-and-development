@@ -124,7 +124,7 @@ Reference Types:
 
 The implementation of `TypedDataHash` for `𝕊` SHALL utilize the `DataEncoder` for encoding each element of the struct based on its type.
 
-## Final Message Encoding
+## Final Message Encodinggit
 
 The encoding of structured data follows this pattern:
 
